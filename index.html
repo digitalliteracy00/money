@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>용돈 관리 보드게임</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Round+Square:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --save-color: #2ECC8A;
+  --save-light: #D4F5E9;
+  --save-dark: #0A6B4A;
+  --invest-color: #4A90D9;
+  --invest-light: #D6EAFB;
+  --invest-dark: #0C3F72;
+  --invest-loss: #E05050;
+  --invest-loss-light: #FDEAEA;
+  --spend-color: #F5A623;
+  --spend-light: #FEF0D5;
+  --spend-dark: #7A4800;
+  --donate-color: #E8538A;
+  --donate-light: #FDDCEC;
+  --donate-dark: #7A1540;
+  --board-bg: #3A7D44;
+  --board-border: #2A5F32;
+  --cell-empty: #4A9954;
+  --bg: #1A1A2E;
+  --panel-bg: #16213E;
+  --card-bg: #0F3460;
+  --text-main: #FFFFFF;
+  --text-muted: #A8B8CC;
+  --gold: #FFD700;
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --shadow-pop: 0 8px 32px rgba(0,0,0,0.5);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Nanum Round Square', sans-serif;
+  background: var(--bg);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; width: 100vw; height: 100vh; }
+.screen.active { display: flex; }
+
+/* ══════════════════════════════
+   INTRO SCREEN
+══════════════════════════════ */
+#intro {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 30% 30%, #1a3a6e 0%, #0a0a1e 60%);
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+}
+#intro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(46,204,138,0.12) 0%, transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(74,144,217,0.12) 0%, transparent 40%);
+}
+.intro-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.star {
+  position: absolute;
+  width: 3px; height: 3px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.4;
+  animation: twinkle 3s infinite;
+}
+@keyframes twinkle {
+  0%,100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
+}
+.intro-board-icon {
+  font-size: 72px;
+  margin-bottom: 16px;
+  animation: floatIcon 3s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+@keyframes floatIcon {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-14px) rotate(3deg); }
+}
+.intro-title {
+  font-family: 'Jua', sans-serif;
+  font-size: 2.8rem;
+  text-align: center;
+  line-height: 1.15;
+  margin-bottom: 6px;
+  position: relative; z-index: 1;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+}
+.intro-title span { color: var(--gold); }
+.intro-sub {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 28px;
+  text-align: center;
+  position: relative; z-index: 1;
+}
+.intro-cats {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+  position: relative; z-index: 1;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.intro-cat {
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.intro-form {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  width: 320px;
+  margin-bottom: 20px;
+  position: relative; z-index: 1;
+  backdrop-filter: blur(10px);
+}
+.intro-form label { font-size: 0.8rem; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 8px; }
+.intro-form input {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: white;
+  font-family: 'Nanum Round Square', sans-serif;
+  font-size: 1.1rem;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.intro-form input:focus { border-color: var(--save-color); }
+.intro-form input::placeholder { color: rgba(255,255,255,0.3); }
+.btn-start {
+  font-family: 'Jua', sans-serif;
+  font-size: 1.2rem;
+  background: linear-gradient(135deg, var(--save-color), #1AB87A);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 40px;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(46,204,138,0.4);
+  transition: all 0.2s;
+  position: relative; z-index: 1;
+}
+.btn-start:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(46,204,138,0.5); }
+.btn-start:active { transform: scale(0.97); }
+
+/* ══════════════════════════════
+   GAME SCREEN — BOARD LAYOUT
+══════════════════════════════ */
+#game {
+  flex-direction: row;
+  overflow: hidden;
+}
+
+/* LEFT PANEL */
+.left-panel {
+  width: 220px;
+  min-width: 220px;
+  background: var(--panel-bg);
+  border-right: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  gap: 12px;
+  overflow-y: auto;
+}
+.player-badge {
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.player-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--save-color), var(--invest-color));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Jua', sans-serif;
+  font-size: 1.4rem;
+  margin: 0 auto 8px;
+}
+.player-name-display { font-weight: 800; font-size: 1rem; margin-bottom: 2px; }
+.cards-left { font-size: 0.78rem; color: var(--text-muted); }
+
+.money-display {
+  background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,215,0,0.05));
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  text-align: center;
+}
+.money-label { font-size: 0.72rem; color: var(--gold); font-weight: 700; margin-bottom: 4px; }
+.money-amount {
+  font-family: 'Jua', sans-serif;
+  font-size: 1.5rem;
+  color: var(--gold);
+}
+.money-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+.alloc-mini {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+.alloc-mini-title { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
+.alloc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.alloc-row-label { font-size: 0.78rem; display: flex; align-items: center; gap: 4px; }
+.alloc-dot { width: 8px; height: 8px; border-radius: 50%; }
+.alloc-row-amt { font-size: 0.82rem; font-weight: 800; }
+.alloc-bar-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-top: 2px; overflow: hidden; }
+.alloc-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+
+.progress-section {
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.progress-title { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; margin-bottom: 6px; }
+.progress-track { height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--save-color), var(--invest-color)); border-radius: 4px; transition: width 0.5s ease; }
+.progress-label-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); }
+
+/* CENTER — BOARD */
+.center-board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  position: relative;
+  background: radial-gradient(ellipse at center, #1e2a3a 0%, #0a0f1a 100%);
+  overflow: hidden;
+}
+.board-frame {
+  background: var(--board-bg);
+  border: 6px solid var(--board-border);
+  border-radius: 20px;
+  padding: 10px;
+  box-shadow: 0 0 60px rgba(0,0,0,0.6), inset 0 0 30px rgba(0,0,0,0.2);
+  position: relative;
+}
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 72px);
+  grid-template-rows: repeat(5, 60px);
+  gap: 4px;
+}
+.cell {
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  cursor: default;
+  position: relative;
+  transition: transform 0.2s;
+  border: 2px solid transparent;
+}
+.cell-save { background: var(--save-dark); border-color: var(--save-color); color: #A8FFD8; }
+.cell-invest { background: var(--invest-dark); border-color: var(--invest-color); color: #B8DAFF; }
+.cell-invest-loss { background: #5A1818; border-color: var(--invest-loss); color: #FFCCCC; }
+.cell-spend { background: var(--spend-dark); border-color: var(--spend-color); color: #FFE4A8; }
+.cell-donate { background: var(--donate-dark); border-color: var(--donate-color); color: #FFCCE5; }
+.cell-center {
+  background: linear-gradient(135deg, #2A1A5A, #1A0A3A);
+  border-color: var(--gold);
+  color: var(--gold);
+  grid-column: 3 / 5;
+  grid-row: 2 / 4;
+  border-radius: 12px;
+  border-width: 3px;
+}
+.cell-empty { background: var(--cell-empty); border-color: rgba(255,255,255,0.1); }
+
+.cell-icon { font-size: 20px; line-height: 1; margin-bottom: 2px; }
+.cell-label { font-size: 0.58rem; text-align: center; line-height: 1.2; }
+.cell.visited { opacity: 0.45; }
+.cell.current {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 14px var(--gold), 0 0 28px rgba(255,215,0,0.3);
+  transform: scale(1.08);
+  z-index: 2;
+}
+.pawn {
+  position: absolute;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 2px 8px rgba(255,215,0,0.8);
+  top: 3px; right: 3px;
+  font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+  animation: pawnPulse 2s infinite;
+}
+@keyframes pawnPulse {
+  0%,100% { box-shadow: 0 2px 8px rgba(255,215,0,0.8); }
+  50% { box-shadow: 0 2px 16px rgba(255,215,0,1), 0 0 30px rgba(255,215,0,0.4); }
+}
+
+/* RIGHT PANEL */
+.right-panel {
+  width: 280px;
+  min-width: 280px;
+  background: var(--panel-bg);
+  border-left: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 14px;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+/* DICE */
+.dice-section {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  text-align: center;
+}
+.dice-section-title { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; }
+.dice-face {
+  font-size: 52px;
+  line-height: 1;
+  display: block;
+  margin-bottom: 8px;
+  transition: transform 0.1s;
+}
+.dice-face.rolling { animation: diceRoll 0.08s infinite; }
+@keyframes diceRoll {
+  0% { transform: rotate(-15deg) scale(1.1); }
+  50% { transform: rotate(15deg) scale(0.95); }
+  100% { transform: rotate(-10deg) scale(1.05); }
+}
+.btn-roll {
+  font-family: 'Jua', sans-serif;
+  font-size: 1rem;
+  background: linear-gradient(135deg, #E8538A, #C0296A);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 10px 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(232,83,138,0.4);
+  transition: all 0.2s;
+  width: 100%;
+}
+.btn-roll:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(232,83,138,0.5); }
+.btn-roll:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.dice-moved { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
+
+/* SITUATION CARD */
+.sit-section {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sit-section-title { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; }
+.sit-card-display {
+  flex: 1;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 120px;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+  background: rgba(255,255,255,0.03);
+}
+.sit-card-display.save { background: rgba(46,204,138,0.1); border-color: rgba(46,204,138,0.3); }
+.sit-card-display.invest { background: rgba(74,144,217,0.1); border-color: rgba(74,144,217,0.3); }
+.sit-card-display.invest-loss { background: rgba(224,80,80,0.1); border-color: rgba(224,80,80,0.3); }
+.sit-card-display.spend { background: rgba(245,166,35,0.1); border-color: rgba(245,166,35,0.3); }
+.sit-card-display.donate { background: rgba(232,83,138,0.1); border-color: rgba(232,83,138,0.3); }
+.sit-card-display.idle { align-items: center; justify-content: center; }
+.sit-icon-big { font-size: 32px; text-align: center; }
+.sit-cat-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.72rem; font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 50px;
+  align-self: flex-start;
+}
+.sit-text-main { font-size: 0.88rem; font-weight: 700; line-height: 1.55; }
+.sit-effect {
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sit-idle-text { color: var(--text-muted); font-size: 0.85rem; text-align: center; }
+
+.btn-confirm {
+  font-family: 'Jua', sans-serif;
+  font-size: 1rem;
+  background: linear-gradient(135deg, var(--invest-color), #2C74CC);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 10px;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(74,144,217,0.4);
+}
+.btn-confirm:hover:not(:disabled) { transform: translateY(-2px); }
+.btn-confirm:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+/* ══════════════════════════════
+   CARD POPUP OVERLAY
+══════════════════════════════ */
+.card-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+}
+.card-overlay.show { display: flex; }
+.card-popup {
+  width: 360px;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+  animation: popIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  border: 2px solid transparent;
+  position: relative;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.7) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.card-popup.save { background: #0C3D28; border-color: var(--save-color); }
+.card-popup.invest { background: #0A2A50; border-color: var(--invest-color); }
+.card-popup.invest-loss { background: #3A0808; border-color: var(--invest-loss); }
+.card-popup.spend { background: #3D2000; border-color: var(--spend-color); }
+.card-popup.donate { background: #3A0A22; border-color: var(--donate-color); }
+.popup-icon { font-size: 56px; text-align: center; margin-bottom: 12px; animation: iconBounce 0.5s 0.3s ease both; }
+@keyframes iconBounce {
+  from { transform: scale(0.5) rotate(-20deg); opacity: 0; }
+  to { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.popup-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.78rem; font-weight: 800;
+  padding: 4px 14px; border-radius: 50px;
+  margin-bottom: 12px;
+}
+.popup-card-num {
+  position: absolute;
+  top: 16px; right: 20px;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.3);
+  font-weight: 700;
+}
+.popup-text {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.popup-effect-box {
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.popup-effect-box.save { background: rgba(46,204,138,0.15); }
+.popup-effect-box.invest { background: rgba(74,144,217,0.15); }
+.popup-effect-box.invest-loss { background: rgba(224,80,80,0.15); }
+.popup-effect-box.spend { background: rgba(245,166,35,0.15); }
+.popup-effect-box.donate { background: rgba(232,83,138,0.15); }
+.popup-effect-icon { font-size: 24px; }
+.popup-effect-text { font-size: 0.9rem; font-weight: 700; line-height: 1.4; }
+.popup-amount { font-family: 'Jua', sans-serif; font-size: 1.3rem; display: block; margin-top: 2px; }
+.btn-popup-ok {
+  width: 100%;
+  font-family: 'Jua', sans-serif;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 50px;
+  padding: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-popup-ok:hover { transform: translateY(-2px); }
+.btn-popup-ok.save { background: var(--save-color); color: #003820; box-shadow: 0 4px 20px rgba(46,204,138,0.5); }
+.btn-popup-ok.invest { background: var(--invest-color); color: white; box-shadow: 0 4px 20px rgba(74,144,217,0.5); }
+.btn-popup-ok.invest-loss { background: var(--invest-loss); color: white; box-shadow: 0 4px 20px rgba(224,80,80,0.5); }
+.btn-popup-ok.spend { background: var(--spend-color); color: #3D1500; box-shadow: 0 4px 20px rgba(245,166,35,0.5); }
+.btn-popup-ok.donate { background: var(--donate-color); color: white; box-shadow: 0 4px 20px rgba(232,83,138,0.5); }
+
+/* ══════════════════════════════
+   RESULT SCREEN
+══════════════════════════════ */
+#result {
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-y: auto;
+  padding: 40px 20px;
+  background: radial-gradient(ellipse at 50% 0%, #1a3060 0%, #050510 70%);
+}
+.result-header { text-align: center; margin-bottom: 24px; }
+.result-trophy { font-size: 72px; animation: troTrophy 1s ease both; }
+@keyframes troTrophy {
+  from { transform: scale(0) rotate(-30deg); opacity: 0; }
+  to { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.result-title { font-family: 'Jua', sans-serif; font-size: 2rem; margin: 8px 0 4px; }
+.result-sub { color: var(--text-muted); font-size: 0.9rem; }
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 640px;
+  margin-bottom: 16px;
+}
+.result-card {
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  border: 2px solid transparent;
+}
+.result-card.save { background: rgba(46,204,138,0.08); border-color: rgba(46,204,138,0.25); }
+.result-card.invest { background: rgba(74,144,217,0.08); border-color: rgba(74,144,217,0.25); }
+.result-card.spend { background: rgba(245,166,35,0.08); border-color: rgba(245,166,35,0.25); }
+.result-card.donate { background: rgba(232,83,138,0.08); border-color: rgba(232,83,138,0.25); }
+.result-card-icon { font-size: 28px; margin-bottom: 6px; }
+.result-card-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; }
+.result-card-amount { font-family: 'Jua', sans-serif; font-size: 1.4rem; }
+.result-card-amount.save { color: var(--save-color); }
+.result-card-amount.invest { color: var(--invest-color); }
+.result-card-amount.spend { color: var(--spend-color); }
+.result-card-amount.donate { color: var(--donate-color); }
+.result-card-detail { font-size: 0.76rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+.result-card-profit {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-top: 4px;
+}
+.result-card-profit.plus { background: rgba(46,204,138,0.2); color: var(--save-color); }
+.result-card-profit.minus { background: rgba(224,80,80,0.2); color: var(--invest-loss); }
+
+.result-total-box {
+  width: 100%;
+  max-width: 640px;
+  background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,215,0,0.04));
+  border: 2px solid rgba(255,215,0,0.35);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.result-total-label { font-size: 0.85rem; color: var(--gold); font-weight: 700; }
+.result-total-amount { font-family: 'Jua', sans-serif; font-size: 2rem; color: var(--gold); }
+.result-total-sub { font-size: 0.75rem; color: rgba(255,215,0,0.6); }
+
+.result-log {
+  width: 100%;
+  max-width: 640px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.result-log-title { font-size: 0.82rem; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; }
+.log-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.8rem;
+}
+.log-item:last-child { border-bottom: none; }
+.log-num { min-width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: var(--text-muted); }
+.log-text { flex: 1; color: var(--text-muted); line-height: 1.4; }
+.log-amount { font-weight: 800; white-space: nowrap; }
+
+.btn-retry {
+  font-family: 'Jua', sans-serif;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, var(--save-color), #1AAA6A);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 40px;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(46,204,138,0.4);
+  transition: all 0.2s;
+}
+.btn-retry:hover { transform: translateY(-3px); }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 30px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(30,30,50,0.95);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: white;
+  border-radius: 50px;
+  padding: 10px 22px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 200;
+  pointer-events: none;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+</style>
+</head>
+<body>
+
+<!-- ══ INTRO ══ -->
+<div class="screen active" id="intro">
+  <div class="intro-stars" id="starsEl"></div>
+  <div class="intro-board-icon">🎲</div>
+  <h1 class="intro-title">용돈 관리<br><span>보드게임</span></h1>
+  <p class="intro-sub">저축 · 투자 · 지출 · 기부 — 20장의 카드로 배워봐요!</p>
+  <div class="intro-cats">
+    <div class="intro-cat" style="background:var(--save-light);color:var(--save-dark)">🐷 저축 5장</div>
+    <div class="intro-cat" style="background:var(--invest-light);color:var(--invest-dark)">📈 투자 5장</div>
+    <div class="intro-cat" style="background:var(--spend-light);color:var(--spend-dark)">🛒 지출 5장</div>
+    <div class="intro-cat" style="background:var(--donate-light);color:var(--donate-dark)">❤️ 기부 5장</div>
+  </div>
+  <div class="intro-form">
+    <label>내 이름을 입력하세요 ✏️</label>
+    <input type="text" id="playerName" placeholder="예: 김민준" maxlength="6" onkeydown="if(event.key==='Enter') startGame()">
+  </div>
+  <button class="btn-start" onclick="startGame()">🎲 게임 시작!</button>
+</div>
+
+<!-- ══ GAME ══ -->
+<div class="screen" id="game">
+  <!-- LEFT -->
+  <div class="left-panel">
+    <div class="player-badge">
+      <div class="player-avatar" id="avatarEl">김</div>
+      <div class="player-name-display" id="nameEl">플레이어</div>
+      <div class="cards-left" id="cardsLeftEl">남은 카드: 20장</div>
+    </div>
+
+    <div class="money-display">
+      <div class="money-label">💰 현재 잔액</div>
+      <div class="money-amount" id="balanceEl">10,000원</div>
+      <div class="money-sub">시작 용돈 10,000원</div>
+    </div>
+
+    <div class="alloc-mini">
+      <div class="alloc-mini-title">💼 배분 현황</div>
+      <div class="alloc-row">
+        <div class="alloc-row-label"><div class="alloc-dot" style="background:var(--save-color)"></div>저축</div>
+        <div class="alloc-row-amt" style="color:var(--save-color)" id="la-save">0원</div>
+      </div>
+      <div class="alloc-bar-track"><div class="alloc-bar-fill" style="background:var(--save-color)" id="lb-save"></div></div>
+      <div style="height:4px"></div>
+      <div class="alloc-row">
+        <div class="alloc-row-label"><div class="alloc-dot" style="background:var(--invest-color)"></div>투자</div>
+        <div class="alloc-row-amt" style="color:var(--invest-color)" id="la-invest">0원</div>
+      </div>
+      <div class="alloc-bar-track"><div class="alloc-bar-fill" style="background:var(--invest-color)" id="lb-invest"></div></div>
+      <div style="height:4px"></div>
+      <div class="alloc-row">
+        <div class="alloc-row-label"><div class="alloc-dot" style="background:var(--spend-color)"></div>지출</div>
+        <div class="alloc-row-amt" style="color:var(--spend-color)" id="la-spend">0원</div>
+      </div>
+      <div class="alloc-bar-track"><div class="alloc-bar-fill" style="background:var(--spend-color)" id="lb-spend"></div></div>
+      <div style="height:4px"></div>
+      <div class="alloc-row">
+        <div class="alloc-row-label"><div class="alloc-dot" style="background:var(--donate-color)"></div>기부</div>
+        <div class="alloc-row-amt" style="color:var(--donate-color)" id="la-donate">0원</div>
+      </div>
+      <div class="alloc-bar-track"><div class="alloc-bar-fill" style="background:var(--donate-color)" id="lb-donate"></div></div>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-title">📋 진행도</div>
+      <div class="progress-track"><div class="progress-fill" id="progFill" style="width:0%"></div></div>
+      <div class="progress-label-row">
+        <span id="progText">0 / 20 카드</span>
+        <span id="progPct">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER BOARD -->
+  <div class="center-board">
+    <div class="board-frame">
+      <div class="board-grid" id="boardGrid"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel">
+    <div class="dice-section">
+      <div class="dice-section-title">🎲 주사위를 굴려보세요!</div>
+      <span class="dice-face" id="diceFace">⚀</span>
+      <button class="btn-roll" id="rollBtn" onclick="rollDice()">주사위 굴리기!</button>
+      <div class="dice-moved" id="diceMovedEl"></div>
+    </div>
+
+    <div class="sit-section">
+      <div class="sit-section-title">📋 상황 카드</div>
+      <div class="sit-card-display idle" id="sitDisplay">
+        <div class="sit-idle-text">주사위를 굴리면<br>상황 카드가 나와요!</div>
+      </div>
+      <button class="btn-confirm" id="confirmBtn" onclick="confirmCard()" disabled>확인하고 다음으로 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CARD POPUP ══ -->
+<div class="card-overlay" id="cardOverlay">
+  <div class="card-popup" id="cardPopup">
+    <div class="popup-card-num" id="popupCardNum">카드 1/20</div>
+    <div class="popup-icon" id="popupIcon">🎴</div>
+    <div class="popup-tag" id="popupTag">저축</div>
+    <div class="popup-text" id="popupText">카드 내용</div>
+    <div class="popup-effect-box" id="popupEffectBox">
+      <div class="popup-effect-icon" id="popupEffectIcon">💰</div>
+      <div class="popup-effect-text" id="popupEffectText">효과</div>
+    </div>
+    <button class="btn-popup-ok" id="popupOkBtn" onclick="closePopup()">알겠어요! ✓</button>
+  </div>
+</div>
+
+<!-- ══ RESULT ══ -->
+<div class="screen" id="result">
+  <div class="result-header">
+    <div class="result-trophy" id="resTrophy">🏆</div>
+    <div class="result-title" id="resTitle">지출 결산서</div>
+    <div class="result-sub" id="resSub">20장의 카드를 모두 완료했어요!</div>
+  </div>
+
+  <div class="result-grid">
+    <div class="result-card save">
+      <div class="result-card-icon">🐷</div>
+      <div class="result-card-label">저축</div>
+      <div class="result-card-amount save" id="res-save-amt">0원</div>
+      <div class="result-card-detail" id="res-save-detail"></div>
+      <span class="result-card-profit plus" id="res-save-profit"></span>
+    </div>
+    <div class="result-card invest">
+      <div class="result-card-icon">📈</div>
+      <div class="result-card-label">투자 (수익/손실 반영)</div>
+      <div class="result-card-amount invest" id="res-invest-amt">0원</div>
+      <div class="result-card-detail" id="res-invest-detail"></div>
+      <span class="result-card-profit" id="res-invest-profit"></span>
+    </div>
+    <div class="result-card spend">
+      <div class="result-card-icon">🛒</div>
+      <div class="result-card-label">지출</div>
+      <div class="result-card-amount spend" id="res-spend-amt">0원</div>
+      <div class="result-card-detail" id="res-spend-detail"></div>
+    </div>
+    <div class="result-card donate">
+      <div class="result-card-icon">❤️</div>
+      <div class="result-card-label">기부</div>
+      <div class="result-card-amount donate" id="res-donate-amt">0원</div>
+      <div class="result-card-detail" id="res-donate-detail"></div>
+    </div>
+  </div>
+
+  <div class="result-total-box">
+    <div>
+      <div class="result-total-label">💰 최종 자산 (1년 후)</div>
+      <div class="result-total-sub">저축이자 + 투자손익 반영</div>
+    </div>
+    <div class="result-total-amount" id="res-total">0원</div>
+  </div>
+
+  <div class="result-log">
+    <div class="result-log-title">📜 카드 기록</div>
+    <div id="logContainer"></div>
+  </div>
+
+  <button class="btn-retry" onclick="resetGame()">🔄 다시 하기</button>
+  <div style="height:40px"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STARS
+const starsEl = document.getElementById('starsEl');
+for(let i=0;i<60;i++){
+  const s = document.createElement('div');
+  s.className='star';
+  s.style.left = Math.random()*100+'%';
+  s.style.top = Math.random()*100+'%';
+  s.style.animationDelay = Math.random()*3+'s';
+  s.style.width = s.style.height = (1+Math.random()*2)+'px';
+  starsEl.appendChild(s);
+}
+
+// ── CARDS DATA ──
+const CARDS = [
+  // SAVE x5
+  { id:1, cat:'save', icon:'🏦', text:'생일에 할머니께서 용돈 5,000원을 주셨어요. 당장 쓸 일이 없어요. 은행에 저축했어요!', amount:1000, effectText:'저축 +1,000원\n(1년 뒤 이자 5% 추가)', effectIcon:'🐷' },
+  { id:2, cat:'save', icon:'✈️', text:'여름방학 가족 여행을 가고 싶어요. 매달 조금씩 모아야 해요. 저축 통장을 만들었어요!', amount:800, effectText:'저축 +800원\n(1년 뒤 이자 5% 추가)', effectIcon:'🐷' },
+  { id:3, cat:'save', icon:'🏥', text:'갑자기 아파서 병원에 가야 할 수도 있어요. 비상금을 미리 저축 통장에 넣었어요!', amount:1200, effectText:'저축 +1,200원\n(1년 뒤 이자 5% 추가)', effectIcon:'🐷' },
+  { id:4, cat:'save', icon:'🎁', text:'크리스마스 선물로 레고를 받고 싶어요. 목돈을 모으려고 저금통에 넣었어요!', amount:600, effectText:'저축 +600원\n(1년 뒤 이자 5% 추가)', effectIcon:'🐷' },
+  { id:5, cat:'save', icon:'🐖', text:'저금통에 용돈을 넣고 있어요. 1년 뒤에 얼마나 모였는지 열어볼 거예요!', amount:500, effectText:'저축 +500원\n(1년 뒤 이자 5% 추가)', effectIcon:'🐷' },
+  // INVEST PROFIT x3
+  { id:6, cat:'invest', invest_type:'profit', icon:'🍦', text:'여름이라 아이스크림 가게에 투자했어요! 날씨가 더워서 장사가 잘 됐어요.', amount:700, effectText:'투자 수익! +20%\n700원 → 840원', effectIcon:'📈' },
+  { id:7, cat:'invest', invest_type:'profit', icon:'🔥', text:'겨울이라 난방용품 가게에 투자했어요! 날씨가 추워서 불티나게 팔렸어요.', amount:700, effectText:'투자 수익! +20%\n700원 → 840원', effectIcon:'📈' },
+  { id:8, cat:'invest', invest_type:'profit', icon:'🤖', text:'10년 뒤 성장할 로봇 회사에 투자했어요! 앞을 내다본 현명한 투자예요.', amount:700, effectText:'투자 수익! +20%\n700원 → 840원', effectIcon:'📈' },
+  // INVEST LOSS x2
+  { id:9, cat:'invest', invest_type:'loss', icon:'😬', text:'친구 말을 듣고 잘 모르는 회사 주식을 샀어요. 투자 전에는 꼭 알아봐야 해요!', amount:700, effectText:'투자 손실... -20%\n700원 → 560원', effectIcon:'📉' },
+  { id:10, cat:'invest', invest_type:'loss', icon:'🏦', text:'은행원이 추천해주는 상품을 잘 알아보지 않고 투자했어요. 신중해야 했는데!', amount:700, effectText:'투자 손실... -20%\n700원 → 560원', effectIcon:'📉' },
+  // SPEND x5
+  { id:11, cat:'spend', icon:'🎂', text:'친구 생일 파티에 초대됐어요. 선물을 사야 해서 문구점에 갔어요!', amount:800, effectText:'지출 -800원\n친구를 위한 소비예요', effectIcon:'🛒' },
+  { id:12, cat:'spend', icon:'🍦', text:'친구들이랑 아이스크림을 사 먹었어요. 맛있게 먹는 것도 소중한 지출이에요!', amount:600, effectText:'지출 -600원\n즐거운 추억이 생겼어요', effectIcon:'🛒' },
+  { id:13, cat:'spend', icon:'🎒', text:'필통이 낡아서 새 필통을 샀어요. 학교생활에 꼭 필요한 물건이에요!', amount:700, effectText:'지출 -700원\n꼭 필요한 소비예요', effectIcon:'🛒' },
+  { id:14, cat:'spend', icon:'🥤', text:'학교 끝나고 너무 더워서 편의점에서 음료수를 사 마셨어요. 시원했어요!', amount:500, effectText:'지출 -500원\n일상적인 소비예요', effectIcon:'🛒' },
+  { id:15, cat:'spend', icon:'📚', text:'읽고 싶던 책을 샀어요. 지식을 쌓는 좋은 지출이에요!', amount:900, effectText:'지출 -900원\n독서는 훌륭한 투자예요', effectIcon:'🛒' },
+  // DONATE x5
+  { id:16, cat:'donate', icon:'🏠', text:'큰 홍수가 나서 집을 잃은 사람들이 많아요. 모금함에 돈을 넣었어요!', amount:500, effectText:'기부 -500원\n따뜻한 마음이 전해져요', effectIcon:'❤️' },
+  { id:17, cat:'donate', icon:'🐶', text:'유기견 보호소에서 강아지 밥값이 부족하다고 해요. 작은 도움을 줬어요!', amount:400, effectText:'기부 -400원\n동물도 행복해졌어요', effectIcon:'❤️' },
+  { id:18, cat:'donate', icon:'✏️', text:'학교에 못 가는 아이들에게 책과 연필을 보내주는 단체에 기부했어요!', amount:600, effectText:'기부 -600원\n교육 기회를 나눴어요', effectIcon:'❤️' },
+  { id:19, cat:'donate', icon:'🌍', text:'지구 환경을 위해 나무를 심는 단체에 기부했어요. 나무 한 그루가 심어져요!', amount:300, effectText:'기부 -300원\n지구가 고마워해요', effectIcon:'❤️' },
+  { id:20, cat:'donate', icon:'🏫', text:'급식비를 낼 수 없는 친구를 반 아이들이 함께 도와줬어요. 나도 함께했어요!', amount:500, effectText:'기부 -500원\n우정과 나눔이 생겼어요', effectIcon:'❤️' },
+];
+
+// ── BOARD LAYOUT (6x5 = 30 cells, 20 playable, center 2x2 = title)
+// We'll mark positions 0..29. Center = positions [14,15,20,21]
+// Playable positions in order (border path + scattered)
+const BOARD_LAYOUT = [
+  // row 0: 0-5
+  {cat:'save'}, {cat:'spend'}, {cat:'donate'}, {cat:'invest'}, {cat:'save'}, {cat:'spend'},
+  // row 1: 6-11
+  {cat:'donate'}, {cat:'invest'}, {cat:'CENTER',span:true}, null, {cat:'save'}, {cat:'donate'},
+  // row 2: 12-17
+  {cat:'spend'}, {cat:'CENTER',span:true}, null, null, {cat:'CENTER',span:true}, {cat:'invest'},
+  // row 3: 18-23
+  {cat:'invest'}, {cat:'CENTER',span:true}, null, null, {cat:'save'}, {cat:'spend'},
+  // row 4: 24-29
+  {cat:'save'}, {cat:'donate'}, {cat:'invest'}, {cat:'spend'}, {cat:'donate'}, {cat:'save'},
+];
+
+// Playable cell indices in traversal order
+const TRAVERSAL = [0,1,2,3,4,5,11,17,23,29,28,27,26,25,24,18,12,6,7,8]; // 20 cells border path
+
+const CAT_META = {
+  save:  { label:'저축', icon:'🐷', cls:'cell-save' },
+  invest:{ label:'투자', icon:'📈', cls:'cell-invest' },
+  spend: { label:'지출', icon:'🛒', cls:'cell-spend' },
+  donate:{ label:'기부', icon:'❤️', cls:'cell-donate' },
+};
+
+const DICE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+
+let state = {};
+
+function initState(name) {
+  // Shuffle the 20 cards
+  const shuffled = [...CARDS].sort(() => Math.random() - 0.5);
+  return {
+    playerName: name,
+    cardDeck: shuffled,
+    cardIndex: 0,          // which card we're on (0-19)
+    pawnPos: 0,            // traversal index
+    allocation: { save:0, invest:0, spend:0, donate:0 },
+    investProfit: 0,
+    investLoss: 0,
+    balance: 10000,
+    log: [],
+    phase: 'roll',         // 'roll' | 'popup' | 'done'
+    currentCard: null,
+  };
+}
+
+function startGame() {
+  const name = document.getElementById('playerName').value.trim() || '친구';
+  state = initState(name);
+  document.getElementById('nameEl').textContent = name;
+  document.getElementById('avatarEl').textContent = name[0];
+  buildBoard();
+  updateUI();
+  showScreen('game');
+}
+
+function buildBoard() {
+  const grid = document.getElementById('boardGrid');
+  grid.innerHTML = '';
+
+  // Track center cells
+  const centerIndices = new Set([7,8,13,14,19,20]); // will recalculate for 6-col
+
+  // Simpler: build 30 cells (6x5)
+  // CENTER spans: col3-4, row1-3 → indices: row1:[8,9], row2:[14,15], row3:[20,21]
+  const centerSet = new Set([8,9,14,15,20,21]);
+
+  for (let i = 0; i < 30; i++) {
+    if (centerSet.has(i)) continue; // handled by span
+
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.id = 'cell-' + i;
+
+    const tIdx = TRAVERSAL.indexOf(i);
+    if (tIdx !== -1) {
+      const cardForCell = state.cardDeck[tIdx];
+      const cat = cardForCell.cat;
+      const type = cat === 'invest' && cardForCell.invest_type === 'loss' ? 'invest-loss' : cat;
+      cell.classList.add(type === 'invest-loss' ? 'cell-invest-loss' : 'cell-' + cat);
+      const iconMap = { save:'🐷', invest:'📈', spend:'🛒', donate:'❤️' };
+      const lossIcon = cardForCell.invest_type === 'loss' ? '📉' : '📈';
+      cell.innerHTML = `<div class="cell-icon">${cat === 'invest' ? lossIcon : iconMap[cat]}</div><div class="cell-label">${tIdx+1}번</div>`;
+    } else {
+      cell.classList.add('cell-empty');
+    }
+
+    // Place center cell at correct position
+    if (i === 8) {
+      const center = document.createElement('div');
+      center.className = 'cell cell-center';
+      center.style.gridColumn = '3 / 5';
+      center.style.gridRow = '2 / 5';
+      center.id = 'cell-center';
+      center.innerHTML = `<div style="font-size:24px;margin-bottom:4px">🎲</div><div style="font-family:'Jua',sans-serif;font-size:0.75rem;text-align:center;line-height:1.4">용돈<br>관리<br>보드게임</div>`;
+      grid.appendChild(cell);
+      grid.appendChild(center);
+      continue;
+    }
+    grid.appendChild(cell);
+  }
+
+  // Place pawn on first cell
+  placePawn(TRAVERSAL[0]);
+}
+
+function placePawn(cellIdx) {
+  // Remove existing pawn
+  document.querySelectorAll('.pawn').forEach(p => p.remove());
+  document.querySelectorAll('.cell.current').forEach(c => c.classList.remove('current'));
+
+  const cell = document.getElementById('cell-' + cellIdx);
+  if (!cell) return;
+  cell.classList.add('current');
+  const pawn = document.createElement('div');
+  pawn.className = 'pawn';
+  pawn.textContent = '★';
+  cell.appendChild(pawn);
+}
+
+function rollDice() {
+  if (state.phase !== 'roll') return;
+  if (state.cardIndex >= 20) return;
+
+  const btn = document.getElementById('rollBtn');
+  const face = document.getElementById('diceFace');
+  btn.disabled = true;
+
+  let count = 0;
+  const iv = setInterval(() => {
+    face.className = 'dice-face rolling';
+    face.textContent = DICE_FACES[Math.floor(Math.random()*6)];
+    count++;
+    if (count > 10) {
+      clearInterval(iv);
+      const val = Math.floor(Math.random()*6)+1;
+      face.textContent = DICE_FACES[val-1];
+      face.className = 'dice-face';
+      document.getElementById('diceMovedEl').textContent = `주사위 ${val}이 나왔어요!`;
+      revealCard();
+    }
+  }, 70);
+}
+
+function revealCard() {
+  const card = state.cardDeck[state.cardIndex];
+  state.currentCard = card;
+  state.phase = 'popup';
+
+  // Show popup
+  const type = card.cat === 'invest' && card.invest_type === 'loss' ? 'invest-loss' : card.cat;
+  const popup = document.getElementById('cardPopup');
+  const overlay = document.getElementById('cardOverlay');
+
+  popup.className = 'card-popup ' + type;
+  document.getElementById('popupCardNum').textContent = `카드 ${state.cardIndex+1} / 20`;
+  document.getElementById('popupIcon').textContent = card.icon;
+
+  const tagEl = document.getElementById('popupTag');
+  const tagColors = {
+    save: 'background:var(--save-light);color:var(--save-dark)',
+    invest: 'background:var(--invest-light);color:var(--invest-dark)',
+    'invest-loss': 'background:var(--invest-loss-light);color:#7A0000',
+    spend: 'background:var(--spend-light);color:var(--spend-dark)',
+    donate: 'background:var(--donate-light);color:var(--donate-dark)',
+  };
+  const tagLabels = { save:'🐷 저축', invest:'📈 투자 (수익!)', 'invest-loss':'📉 투자 (손실)', spend:'🛒 지출', donate:'❤️ 기부' };
+  tagEl.style.cssText = tagColors[type];
+  tagEl.textContent = tagLabels[type];
+
+  document.getElementById('popupText').textContent = card.text;
+
+  const effBox = document.getElementById('popupEffectBox');
+  effBox.className = 'popup-effect-box ' + type;
+  document.getElementById('popupEffectIcon').textContent = card.effectIcon;
+
+  let effHtml = card.effectText;
+  if (card.cat === 'save') effHtml = `저축 <strong style="font-family:'Jua'">+${card.amount.toLocaleString()}원</strong><br><span style="font-size:0.78rem;opacity:0.8">1년 뒤 5% 이자 → ${Math.round(card.amount*1.05).toLocaleString()}원</span>`;
+  else if (card.cat === 'invest' && card.invest_type === 'profit') effHtml = `투자 <strong style="font-family:'Jua'">+${card.amount.toLocaleString()}원</strong> → <strong style="font-family:'Jua';color:var(--save-color)">+20% 수익!</strong><br><span style="font-size:0.78rem;opacity:0.8">${card.amount.toLocaleString()}원 → ${Math.round(card.amount*1.2).toLocaleString()}원</span>`;
+  else if (card.cat === 'invest' && card.invest_type === 'loss') effHtml = `투자 <strong style="font-family:'Jua'">+${card.amount.toLocaleString()}원</strong> → <strong style="font-family:'Jua';color:var(--invest-loss)">-20% 손실...</strong><br><span style="font-size:0.78rem;opacity:0.8">${card.amount.toLocaleString()}원 → ${Math.round(card.amount*0.8).toLocaleString()}원</span>`;
+  else if (card.cat === 'spend') effHtml = `지출 <strong style="font-family:'Jua'">-${card.amount.toLocaleString()}원</strong>`;
+  else if (card.cat === 'donate') effHtml = `기부 <strong style="font-family:'Jua'">-${card.amount.toLocaleString()}원</strong>`;
+
+  document.getElementById('popupEffectText').innerHTML = effHtml;
+  document.getElementById('popupOkBtn').className = 'btn-popup-ok ' + type;
+
+  overlay.classList.add('show');
+}
+
+function closePopup() {
+  document.getElementById('cardOverlay').classList.remove('show');
+
+  const card = state.currentCard;
+  const type = card.cat === 'invest' && card.invest_type === 'loss' ? 'invest-loss' : card.cat;
+
+  // Apply card effect
+  if (card.cat === 'save') {
+    state.allocation.save += card.amount;
+    state.balance -= card.amount;
+  } else if (card.cat === 'invest') {
+    state.allocation.invest += card.amount;
+    state.balance -= card.amount;
+    if (card.invest_type === 'profit') state.investProfit += card.amount;
+    else state.investLoss += card.amount;
+  } else if (card.cat === 'spend') {
+    state.allocation.spend += card.amount;
+    state.balance -= card.amount;
+  } else if (card.cat === 'donate') {
+    state.allocation.donate += card.amount;
+    state.balance -= card.amount;
+  }
+
+  // Log
+  state.log.push({ card, type });
+
+  // Move pawn
+  const pawnIdx = TRAVERSAL[state.cardIndex];
+  const cell = document.getElementById('cell-' + pawnIdx);
+  if (cell) cell.classList.add('visited');
+
+  state.cardIndex++;
+
+  if (state.cardIndex < 20) {
+    placePawn(TRAVERSAL[state.cardIndex]);
+  } else {
+    // Remove pawn
+    document.querySelectorAll('.pawn').forEach(p => p.remove());
+    document.querySelectorAll('.cell.current').forEach(c => c.classList.remove('current'));
+  }
+
+  // Update sit display
+  updateSitDisplay(card, type);
+
+  // Show confirm button now
+  document.getElementById('confirmBtn').disabled = false;
+  state.phase = 'confirm';
+
+  updateUI();
+}
+
+function updateSitDisplay(card, type) {
+  const el = document.getElementById('sitDisplay');
+  el.className = 'sit-card-display ' + type;
+  const tagLabels = { save:'🐷 저축', invest:'📈 투자 수익', 'invest-loss':'📉 투자 손실', spend:'🛒 지출', donate:'❤️ 기부' };
+  const tagColors = {
+    save: 'background:var(--save-light);color:var(--save-dark)',
+    invest: 'background:var(--invest-light);color:var(--invest-dark)',
+    'invest-loss': 'background:var(--invest-loss-light);color:#7A0000',
+    spend: 'background:var(--spend-light);color:var(--spend-dark)',
+    donate: 'background:var(--donate-light);color:var(--donate-dark)',
+  };
+  el.innerHTML = `
+    <div class="sit-icon-big">${card.icon}</div>
+    <div class="sit-cat-tag" style="${tagColors[type]}">${tagLabels[type]}</div>
+    <div class="sit-text-main">${card.text}</div>
+    <div class="sit-effect">${card.effectIcon} <span>${card.effectText}</span></div>
+  `;
+}
+
+function confirmCard() {
+  if (state.phase !== 'confirm') return;
+  document.getElementById('confirmBtn').disabled = true;
+  document.getElementById('diceMovedEl').textContent = '';
+
+  if (state.cardIndex >= 20) {
+    state.phase = 'done';
+    showResult();
+    return;
+  }
+
+  state.phase = 'roll';
+  document.getElementById('rollBtn').disabled = false;
+
+  // Reset sit display
+  document.getElementById('sitDisplay').className = 'sit-card-display idle';
+  document.getElementById('sitDisplay').innerHTML = '<div class="sit-idle-text">주사위를 굴리면<br>다음 카드가 나와요!</div>';
+  document.getElementById('diceFace').textContent = '⚀';
+}
+
+function updateUI() {
+  const s = state;
+  document.getElementById('cardsLeftEl').textContent = `남은 카드: ${20 - s.cardIndex}장`;
+  document.getElementById('balanceEl').textContent = s.balance.toLocaleString() + '원';
+  const total = Object.values(s.allocation).reduce((a,b)=>a+b,0) || 1;
+
+  ['save','invest','spend','donate'].forEach(cat => {
+    const amt = s.allocation[cat];
+    document.getElementById('la-'+cat).textContent = amt.toLocaleString()+'원';
+    document.getElementById('lb-'+cat).style.width = (amt/total*100)+'%';
+  });
+
+  const pct = Math.round(s.cardIndex/20*100);
+  document.getElementById('progFill').style.width = pct+'%';
+  document.getElementById('progText').textContent = `${s.cardIndex} / 20 카드`;
+  document.getElementById('progPct').textContent = pct+'%';
+}
+
+function showResult() {
+  const s = state;
+
+  // Save: +5% interest
+  const saveBase = s.allocation.save;
+  const saveInterest = Math.round(saveBase * 0.05);
+  const saveFinal = saveBase + saveInterest;
+
+  // Invest: profit cards +20%, loss cards -20%
+  const investProfit = s.investProfit;
+  const investLoss = s.investLoss;
+  const investGain = Math.round(investProfit * 0.2);
+  const investLossAmt = Math.round(investLoss * 0.2);
+  const investNet = investProfit + investLoss + investGain - investLossAmt;
+
+  const spendTotal = s.allocation.spend;
+  const donateTotal = s.allocation.donate;
+
+  const finalTotal = saveFinal + investNet;
+
+  document.getElementById('res-save-amt').textContent = saveBase.toLocaleString()+'원';
+  document.getElementById('res-save-detail').textContent = `원금 ${saveBase.toLocaleString()}원 + 이자 5%`;
+  document.getElementById('res-save-profit').textContent = `+${saveInterest.toLocaleString()}원 이자`;
+  document.getElementById('res-save-profit').className = 'result-card-profit plus';
+
+  document.getElementById('res-invest-amt').textContent = (investProfit+investLoss).toLocaleString()+'원';
+  const investDiff = investGain - investLossAmt;
+  document.getElementById('res-invest-detail').textContent = `수익카드 ${investProfit.toLocaleString()}원 (+20%), 손실카드 ${investLoss.toLocaleString()}원 (-20%)`;
+  const profitEl = document.getElementById('res-invest-profit');
+  if (investDiff >= 0) {
+    profitEl.textContent = `+${investDiff.toLocaleString()}원 수익`;
+    profitEl.className = 'result-card-profit plus';
+  } else {
+    profitEl.textContent = `${investDiff.toLocaleString()}원 손실`;
+    profitEl.className = 'result-card-profit minus';
+  }
+
+  document.getElementById('res-spend-amt').textContent = spendTotal.toLocaleString()+'원';
+  document.getElementById('res-spend-detail').textContent = `총 ${spendTotal.toLocaleString()}원 소비`;
+  document.getElementById('res-donate-amt').textContent = donateTotal.toLocaleString()+'원';
+  document.getElementById('res-donate-detail').textContent = `총 ${donateTotal.toLocaleString()}원 기부`;
+  document.getElementById('res-total').textContent = finalTotal.toLocaleString()+'원';
+
+  // Title
+  document.getElementById('resTitle').textContent = `${s.playerName}의 지출 결산서`;
+
+  // Log
+  const logEl = document.getElementById('logContainer');
+  logEl.innerHTML = s.log.map((entry, i) => {
+    const c = entry.card;
+    const type = entry.type;
+    const amtColors = { save:'var(--save-color)', invest:'var(--invest-color)', 'invest-loss':'var(--invest-loss)', spend:'var(--spend-color)', donate:'var(--donate-color)' };
+    const amtLabels = { save:`+${c.amount.toLocaleString()}원 저축`, invest:`+${c.amount.toLocaleString()}원 투자(수익)`, 'invest-loss':`+${c.amount.toLocaleString()}원 투자(손실)`, spend:`-${c.amount.toLocaleString()}원 지출`, donate:`-${c.amount.toLocaleString()}원 기부` };
+    return `<div class="log-item">
+      <div class="log-num">${i+1}</div>
+      <div class="log-text">${c.icon} ${c.text.substring(0,30)}...</div>
+      <div class="log-amount" style="color:${amtColors[type]}">${amtLabels[type]}</div>
+    </div>`;
+  }).join('');
+
+  showScreen('result');
+}
+
+function resetGame() {
+  document.getElementById('playerName').value = '';
+  showScreen('intro');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+</script>
+</body>
+</html>
