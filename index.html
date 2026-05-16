@@ -758,7 +758,7 @@ body {
     <div class="dice-section">
       <div class="dice-section-title">🎲 주사위를 굴려보세요!</div>
       <span class="dice-face" id="diceFace">⚀</span>
-      <button class="btn-roll" id="rollBtn" onclick="rollDice()">주사위 굴리기!</button>
+      <button class="btn-roll" id="rollBtn" ontouchstart="event.preventDefault();rollDice();" onclick="rollDice()">주사위 굴리기!</button>
       <div class="dice-moved" id="diceMovedEl"></div>
     </div>
 
@@ -767,7 +767,7 @@ body {
       <div class="sit-card-display idle" id="sitDisplay">
         <div class="sit-idle-text">주사위를 굴리면<br>상황 카드가 나와요!</div>
       </div>
-      <button class="btn-confirm" id="confirmBtn" onclick="confirmCard()" disabled>확인하고 다음으로 →</button>
+      <button class="btn-confirm" id="confirmBtn" ontouchstart="event.preventDefault();confirmCard();" onclick="confirmCard()" disabled>확인하고 다음으로 →</button>
     </div>
   </div>
 </div>
@@ -783,7 +783,7 @@ body {
       <div class="popup-effect-icon" id="popupEffectIcon">💰</div>
       <div class="popup-effect-text" id="popupEffectText">효과</div>
     </div>
-    <button class="btn-popup-ok" id="popupOkBtn" onclick="closePopup()">알겠어요! ✓</button>
+    <button class="btn-popup-ok" id="popupOkBtn" ontouchstart="event.preventDefault();closePopup();" onclick="closePopup()">알겠어요! ✓</button>
   </div>
 </div>
 
@@ -1007,9 +1007,15 @@ function placePawn(cellIdx) {
   cell.appendChild(pawn);
 }
 
+let _rollLock = false; // extra guard against touch double-fire
+
 function rollDice() {
+  if (_rollLock) return;
   if (state.phase !== 'roll') return;
   if (state.cardIndex >= 20) return;
+
+  _rollLock = true;
+  state.phase = 'rolling'; // intermediate phase so re-entry is impossible
 
   const btn = document.getElementById('rollBtn');
   const face = document.getElementById('diceFace');
@@ -1026,6 +1032,7 @@ function rollDice() {
       face.textContent = DICE_FACES[val-1];
       face.className = 'dice-face';
       document.getElementById('diceMovedEl').textContent = `주사위 ${val}이 나왔어요!`;
+      _rollLock = false;
       revealCard();
     }
   }, 70);
@@ -1158,7 +1165,13 @@ function confirmCard() {
   }
 
   state.phase = 'roll';
-  document.getElementById('rollBtn').disabled = false;
+  _rollLock = false; // always clear lock when returning to roll phase
+
+  // Re-enable roll button (use setTimeout to ensure DOM settles on mobile)
+  setTimeout(() => {
+    const rollBtn = document.getElementById('rollBtn');
+    if (rollBtn) rollBtn.disabled = false;
+  }, 50);
 
   // Reset sit display
   document.getElementById('sitDisplay').className = 'sit-card-display idle';
